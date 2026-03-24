@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TUSS.IO - Дижитал Робот Угсралт (AI Powered)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Poppins:wght@500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        /* =========================================
+           BASE STYLES & THEME (Fully Responsive)
+           ========================================= */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: #f0f9ff;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; width: 100vw; font-family: 'Nunito', sans-serif;
+            color: #334155; overflow: hidden; /* Дэлгэцнээс халихыг бүрэн хаасан */
+            margin: 0;
+        }
+
+        /* SLIDE CONTAINER (100% Viewport for standard apps) */
+        #presentation-container {
+            position: relative; width: 100vw; height: 100vh;
+            background-color: #ffffff; border-radius: 0;
+            box-shadow: none; overflow: hidden;
+            display: flex; flex-direction: column;
+        }
+
+        #presentation-container::before {
+            content: ''; position: absolute; top: -15%; left: -10%; width: 50%; height: 60%;
+            background: radial-gradient(circle, rgba(14,165,233,0.08) 0%, rgba(255,255,255,0) 70%);
+            z-index: 0; pointer-events: none;
+        }
+        #presentation-container::after {
+            content: ''; position: absolute; bottom: -10%; right: -10%; width: 50%; height: 50%;
+            background: radial-gradient(circle, rgba(245,158,11,0.06) 0%, rgba(255,255,255,0) 70%);
+            z-index: 0; pointer-events: none;
+        }
+
+        .slide {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            padding: 4vh 5vw 12vh 5vw; /* vh, vw ашиглаж дэлгэцний хэмжээнд тохируулсан */
+            display: none; flex-direction: column; justify-content: center;
+            z-index: 1; opacity: 0; transition: opacity 0.4s ease, transform 0.4s ease;
+            transform: translateY(15px);
+        }
+        .slide.active { display: flex; opacity: 1; transform: translateY(0); }
+
+        /* NAVIGATION BAR */
+        .nav-bar {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 10vh;
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 0 5vw; z-index: 100; background: linear-gradient(to top, #ffffff 60%, rgba(255,255,255,0));
+        }
+
+        .progress-indicator { display: flex; gap: 10px; align-items: center; justify-content: center; flex-grow: 1; }
+        .dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            background-color: #e2e8f0; transition: all 0.3s ease;
+        }
+        .dot.active {
+            background-color: #0ea5e9; transform: scale(1.4);
+            box-shadow: 0 0 10px rgba(14, 165, 233, 0.4);
+        }
+        .dot.completed { background-color: #7dd3fc; }
+
+        /* TYPOGRAPHY */
+        h1, h2, h3, .poppins { font-family: 'Poppins', sans-serif; color: #0f172a; }
+        h1 { font-size: clamp(28px, 5vh, 46px); line-height: 1.2; text-align: center; font-weight: 900; }
+        .blue { color: #0ea5e9; } .orange { color: #f59e0b; }
+        .slide-title { 
+            color: #0ea5e9; font-size: clamp(22px, 4vh, 32px); margin-bottom: 2vh; font-weight: 700;
+            border-bottom: 3px solid #f0f9ff; padding-bottom: 5px; display: inline-block;
+        }
+        p, li { font-size: clamp(14px, 2.2vh, 18px); line-height: 1.6; color: #475569; }
+        strong { color: #0f172a; font-weight: 700; }
+        
+        /* BUTTONS */
+        .btn {
+            display: inline-flex; align-items: center; gap: 8px; justify-content: center;
+            padding: 1.5vh 2vw; border-radius: 12px; font-family: 'Poppins', sans-serif; 
+            font-size: clamp(12px, 2vh, 16px); font-weight: 700; cursor: pointer; transition: all 0.3s ease; border: none; text-decoration: none; min-width: 140px;
+        }
+        .btn-primary { background: linear-gradient(135deg, #0ea5e9, #0284c7); color: #fff; box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3); }
+        .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(14, 165, 233, 0.4); }
+        .btn-secondary { background-color: #f8fafc; color: #0ea5e9; border: 2px solid #e0f2fe; }
+        .btn-secondary:hover:not(:disabled) { background-color: #f0f9ff; border-color: #bae6fd; transform: translateY(-2px); }
+        .btn-warning { background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); }
+        .btn-warning:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4); }
+        
+        .nav-hidden { visibility: hidden !important; pointer-events: none; }
+        .btn-disabled, button:disabled { opacity: 0.5; background: #e2e8f0 !important; color: #94a3b8 !important; cursor: not-allowed; box-shadow: none !important; transform: none !important; border-color: transparent !important; }
+
+        /* LAYOUTS */
+        .content-area { display: flex; flex-direction: column; flex-grow: 1; justify-content: center; height: 100%; }
+        .two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 4vw; align-items: center; height: 100%; }
+        
+        /* MODULE SELECTION GRID */
+        .module-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1vw; margin-top: 1vh; }
+        .module-card {
+            background: #ffffff; border: 2px solid #f1f5f9; border-radius: 16px; padding: 2vh 1vw;
+            text-align: center; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .module-card:hover { border-color: #bae6fd; transform: translateY(-3px); box-shadow: 0 10px 15px rgba(14,165,233,0.1); }
+        .module-card.selected { border-color: #0ea5e9; background: #f0f9ff; box-shadow: 0 8px 20px rgba(14, 165, 233, 0.15); }
+        .module-card i { font-size: clamp(20px, 4vh, 30px); margin-bottom: 1vh; color: #94a3b8; transition: color 0.3s; }
+        .module-card.selected i { color: #0ea5e9; }
+        .module-card h4 { font-family: 'Poppins', sans-serif; font-size: clamp(10px, 1.8vh, 14px); color: #334155; font-weight: 600; line-height: 1.2;}
+        .module-card.selected h4 { color: #0f172a; }
+        .selection-status { margin-top: 2vh; text-align: right; font-family: 'Poppins', sans-serif; color: #0ea5e9; font-size: 16px; font-weight: 700; }
+
+        /* BULLET LIST */
+        .task-list { list-style: none; padding: 0; max-height: 40vh; overflow-y: auto; }
+        .task-list li {
+            background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px;
+            margin-bottom: 1vh; padding: 1.5vh 1.5vh 1.5vh 3.5vw; position: relative;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+        .task-list i { color: #0ea5e9; font-size: clamp(16px, 3vh, 24px); position: absolute; left: 1vw; top: 1.8vh; }
+        .task-list strong { color: #0f172a; font-family: 'Poppins', sans-serif; display: block; margin-bottom: 0.5vh; font-size: clamp(12px, 2vh, 16px); }
+
+        /* MODAL */
+        .modal-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(5px);
+            display: none; justify-content: center; align-items: center; z-index: 200; opacity: 0; transition: opacity 0.3s ease;
+        }
+        .modal-overlay.active { display: flex; opacity: 1; }
+        .modal-content {
+            background: #ffffff; border-radius: 20px;
+            width: 90vw; max-width: 800px; max-height: 90vh; padding: 4vh; position: relative; 
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2); 
+            display: flex; flex-direction: column;
+        }
+        .modal-content h2 { color: #0ea5e9; margin-bottom: 2vh; border-bottom: 2px solid #f0f9ff; padding-bottom: 1vh; flex-shrink: 0; font-size: clamp(20px, 3vh, 28px);}
+        .close-btn {
+            position: absolute; top: 2vh; right: 2vw; background: #f1f5f9; border: none; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+            color: #64748b; font-size: 20px; cursor: pointer; transition: all 0.2s;
+        }
+        .close-btn:hover { background: #fee2e2; color: #ef4444; }
+
+        /* AI CHAT UI */
+        .ai-chat-container {
+            flex: 1; overflow-y: auto; background: #f8fafc; border-radius: 16px; 
+            padding: 2vh; border: 1px solid #e2e8f0; display: flex; flex-direction: column; 
+            gap: 1.5vh; margin-bottom: 1.5vh; box-shadow: inset 0 2px 10px rgba(0,0,0,0.02);
+            min-height: 30vh;
+        }
+        .chat-msg {
+            padding: 1.5vh 2vw; border-radius: 16px; font-size: clamp(12px, 2vh, 16px); line-height: 1.6; 
+            max-width: 85%; position: relative; word-wrap: break-word;
+        }
+        .msg-user {
+            background: linear-gradient(135deg, #0ea5e9, #0284c7); color: white; 
+            align-self: flex-end; border-bottom-right-radius: 4px; box-shadow: 0 4px 10px rgba(14, 165, 233, 0.2);
+        }
+        .msg-ai {
+            background: #ffffff; color: #334155; align-self: flex-start; 
+            border: 1px solid #e2e8f0; border-bottom-left-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+            margin-left: 35px;
+        }
+        .msg-ai::before {
+            content: '\f544'; font-family: "Font Awesome 6 Free"; font-weight: 900;
+            position: absolute; left: -45px; bottom: 0;
+            width: 35px; height: 35px; background: #e0f2fe; color: #0ea5e9;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 16px; border: 1px solid #bae6fd;
+        }
+        .ai-input-wrapper { display: flex; gap: 10px; flex-shrink: 0; }
+        .ai-input-wrapper input {
+            flex: 1; padding: 1.5vh 2vw; border-radius: 12px; border: 2px solid #e2e8f0;
+            font-family: 'Nunito', sans-serif; font-size: clamp(12px, 2vh, 16px); outline: none; transition: all 0.3s;
+        }
+        .ai-input-wrapper input:focus { border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1); }
+        .loading-dots:after { content: '.'; animation: dots 1.5s steps(5, end) infinite; }
+        @keyframes dots { 0%, 20% { color: rgba(0,0,0,0); text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); } 40% { color: inherit; text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); } 60% { text-shadow: .25em 0 0 inherit, .5em 0 0 rgba(0,0,0,0); } 80%, 100% { text-shadow: .25em 0 0 inherit, .5em 0 0 inherit; } }
+
+        /* =========================================
+           CSS ROBOT ANIMATION (Responsive scaling)
+           ========================================= */
+        .robot-display {
+            width: 100%; height: 60vh; max-height: 450px; background: #f8fafc; border-radius: 24px;
+            display: flex; justify-content: center; align-items: center; position: relative;
+            border: 2px solid #e2e8f0; box-shadow: inset 0 0 30px rgba(0,0,0,0.03); overflow: hidden;
+        }
+        .r-container { position: relative; width: 200px; height: 320px; transform: scale(1); transition: transform 0.3s;}
+        
+        /* Хэрэв дэлгэцийн өндөр жижиг байвал роботыг жижигрүүлж багтаана */
+        @media (max-height: 700px) { .r-container { transform: scale(0.8); } }
+        @media (max-height: 600px) { .r-container { transform: scale(0.65); } }
+
+        .r-part {
+            position: absolute; border-radius: 12px; transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            background: repeating-linear-gradient(45deg, rgba(226, 232, 240, 0.4), rgba(226, 232, 240, 0.4) 10px, rgba(241, 245, 249, 0.4) 10px, rgba(241, 245, 249, 0.4) 20px); 
+            border: 2px dashed #cbd5e1; display: flex; justify-content: center; align-items: center;
+        }
+        .r-part.filled {
+            background: linear-gradient(135deg, #38bdf8, #0ea5e9); border: 2px solid #0284c7;
+            box-shadow: inset 0 2px 5px rgba(255,255,255,0.4), 0 5px 15px rgba(14,165,233,0.3);
+            animation: snapIn 0.5s ease forwards;
+        }
+        @keyframes snapIn { 0% { transform: scale(0.8) translateY(10px); opacity: 0; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
+
+        .r-base { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 140px; height: 30px; border-radius: 10px 10px 4px 4px; background: #94a3b8; border: 2px solid #64748b; box-shadow: 0 10px 10px rgba(0,0,0,0.1); }
+        .r-visor { top: 35px; left: 60px; width: 80px; height: 25px; border-radius: 8px; z-index: 10; }
+        .r-head { top: 10px; left: 50px; width: 100px; height: 75px; border-radius: 40px 40px 15px 15px; z-index: 5; }
+        .r-chest { top: 95px; left: 40px; width: 120px; height: 100px; border-radius: 20px; z-index: 4; }
+        .r-core-light { width: 35px; height: 35px; border-radius: 50%; background: #fff; opacity: 0; transition: opacity 0.5s; box-shadow: inset 0 0 10px #0ea5e9;}
+        .r-chest.filled .r-core-light { opacity: 1; box-shadow: 0 0 20px #fff, inset 0 0 5px #0ea5e9; animation: heartBeat 2s infinite; }
+        .r-chest.ai-thinking .r-core-light { background: #fde047; box-shadow: 0 0 30px #facc15; animation: heartBeat 0.5s infinite; }
+        .r-arm-r { top: 105px; right: -15px; width: 35px; height: 110px; border-radius: 18px; transform-origin: top center; transform: rotate(-15deg); z-index: 3; }
+        .r-arm-l { top: 105px; left: -15px; width: 35px; height: 110px; border-radius: 18px; transform-origin: top center; transform: rotate(15deg); z-index: 3; }
+        .r-leg-r { top: 185px; right: 45px; width: 40px; height: 105px; border-radius: 15px; z-index: 2; }
+        .r-leg-l { top: 185px; left: 45px; width: 40px; height: 105px; border-radius: 15px; z-index: 2; }
+        .r-antenna { top: -20px; left: 95px; width: 10px; height: 40px; border-radius: 5px; z-index: 1; }
+        .r-antenna::before { content: ''; position: absolute; top: -5px; left: -5px; width: 20px; height: 20px; border-radius: 50%; background: inherit; border: inherit; box-shadow: inherit;}
+
+        @keyframes heartBeat { 0% { transform: scale(1); opacity: 0.8; } 15% { transform: scale(1.15); opacity: 1; } 30% { transform: scale(1); opacity: 0.8; } 45% { transform: scale(1.15); opacity: 1; } 60% { transform: scale(1); opacity: 0.8; } }
+        .robot-display.fully-complete .r-container { animation: floatRobot 3s ease-in-out infinite; }
+        @keyframes floatRobot { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+
+    </style>
+</head>
+<body>
+
+    <div id="presentation-container">
+        <div id="slides-wrapper">
+            
+            <!-- Slide 0: Intro -->
+            <div class="slide active" id="slide-0">
+                <div class="content-area" style="align-items: center; text-align: center;">
+                    <div style="background: #e0f2fe; padding: 2vh; border-radius: 50%; margin-bottom: 2vh; border: 4px solid #bae6fd;">
+                        <i class="fa-solid fa-robot fa-4x" style="color: #0ea5e9;"></i>
+                    </div>
+                    <h1>Таны Дижитал <span class="blue">Робот</span> Туслах</h1>
+                    <p style="margin-top: 2vh; max-width: 700px;">TUSS.IO системд тавтай морил! Энэхүү аяллаар та өөрийн байгууллагын үйл ажиллагааг удирдах ухаалаг роботыг алхам алхмаар бүтээх болно. Мөн <strong>✨ AI хиймэл оюун ухаан</strong> танд зөвлөгөө өгч тусална.</p>
+                </div>
+            </div>
+
+            <!-- Slide 1: Mandatory Foundation -->
+            <div class="slide" id="slide-1">
+                <h2 class="slide-title">Алхам 1: Суурь Платформ</h2>
+                <div class="content-area">
+                    <div class="two-column">
+                        <div>
+                            <h3 style="font-size: clamp(18px, 3vh, 26px); margin-bottom: 2vh; color: #0f172a;">Байгууллагын тохиргоо & Үүрэг роль</h3>
+                            <p style="margin-bottom: 2vh;">Аливаа робот бат бөх суурьгүйгээр ажиллаж чадахгүй. Хамгийн эхний бөгөөд <strong>зайлшгүй хийж сурах ёстой</strong> алхам бол системийн суурь тохиргоо юм.</p>
+                            <ul style="list-style: none; margin-bottom: 3vh;">
+                                <li style="margin-bottom: 1vh;"><i class="fa-solid fa-check-circle" style="color: #0ea5e9; margin-right: 10px;"></i> <strong>Байгууллагын мэдээлэл:</strong> Компанийн нэр, лого тохируулах</li>
+                                <li style="margin-bottom: 1vh;"><i class="fa-solid fa-check-circle" style="color: #0ea5e9; margin-right: 10px;"></i> <strong>Үүрэг, роль:</strong> Систем дэх албан тушаал, ролийг тодорхойлох</li>
+                                <li><i class="fa-solid fa-check-circle" style="color: #0ea5e9; margin-right: 10px;"></i> <strong>Эрхийн тохиргоо:</strong> Ажилтнуудын хандах эрхийг хуваарилах</li>
+                            </ul>
+                            <button class="btn btn-primary" onclick="openVideoModal('Суурь тохиргоо')"><i class="fa-solid fa-play"></i> Заавар бичлэг үзэх</button>
+                        </div>
+                        <div class="robot-display">
+                            <div class="r-container">
+                                <div class="r-base" style="background: #0ea5e9; border-color: #0284c7; box-shadow: 0 0 15px rgba(14,165,233,0.5);"></div>
+                                <div class="r-part r-antenna"></div>
+                                <div class="r-part r-head"></div>
+                                <div class="r-part r-visor"></div>
+                                <div class="r-part r-chest"></div>
+                                <div class="r-part r-arm-r"></div>
+                                <div class="r-part r-arm-l"></div>
+                                <div class="r-part r-leg-r"></div>
+                                <div class="r-part r-leg-l"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 2: Module Selection -->
+            <div class="slide" id="slide-2">
+                <h2 class="slide-title">Алхам 2: Роботын Эд Ангиуд</h2>
+                <div class="content-area">
+                    <div class="two-column">
+                        <div>
+                            <p style="margin-bottom: 1vh;">Ямар эд ангиуд (модуль) нэмэхийг хүсэж байна вэ? Хүссэн тоогоороо <strong>(Бүгдийг нь ч сонгож болно)</strong> сонгоорой.</p>
+                            <div class="module-grid" id="module-grid">
+                                <!-- Filled by JS -->
+                            </div>
+                            <div class="selection-status" id="selection-status">Угсарсан хэсэг: 0 / 8</div>
+                        </div>
+                        <div class="robot-display" id="selection-robot-bg">
+                            <div class="r-container">
+                                <div class="r-base" style="background: #0ea5e9; border-color: #0284c7;"></div>
+                                <!-- Dynamically filled -->
+                                <div class="r-part r-antenna" id="part-diagnosis"></div>
+                                <div class="r-part r-head" id="part-hr"></div>
+                                <div class="r-part r-visor" id="part-profile"></div>
+                                <div class="r-part r-chest" id="part-goal"><div class="r-core-light"></div></div>
+                                <div class="r-part r-arm-l" id="part-weekly"></div>
+                                <div class="r-part r-arm-r" id="part-task"></div>
+                                <div class="r-part r-leg-l" id="part-dashboard"></div>
+                                <div class="r-part r-leg-r" id="part-document"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Navigation Bar -->
+        <div class="nav-bar">
+            <button class="btn btn-secondary nav-hidden" id="btn-prev" onclick="prevSlide()"><i class="fa-solid fa-chevron-left"></i> Өмнөх</button>
+            <div class="progress-indicator" id="progress-indicator"></div>
+            <button class="btn btn-primary" id="btn-next" onclick="nextSlide()">Дараах <i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+
+        <!-- Unified AI Chat Modal -->
+        <div class="modal-overlay" id="theory-modal">
+            <div class="modal-content">
+                <button class="close-btn" onclick="closeModal('theory-modal')"><i class="fa-solid fa-xmark"></i></button>
+                <h2 id="modal-title"><i class="fa-solid fa-robot"></i> ✨ AI Робот Багш</h2>
+                
+                <div class="ai-chat-container" id="ai-chat-container"></div>
+                
+                <div class="ai-input-wrapper">
+                    <input type="text" id="ai-question-input" placeholder="Системийн талаар асуух зүйлээ энд бичнэ үү..." onkeypress="handleKeyPress(event)">
+                    <button class="btn btn-primary" id="ai-ask-btn" onclick="askAITutor()" style="padding: 1vh 1vw; min-width: auto; border-radius: 12px;"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Video Modal -->
+        <div class="modal-overlay" id="video-modal">
+            <div class="modal-content" style="max-width: 900px; text-align: center; justify-content: center; align-items: center;">
+                <button class="close-btn" onclick="closeModal('video-modal')"><i class="fa-solid fa-xmark"></i></button>
+                <h2 id="video-title" style="align-self: flex-start; width: 100%; text-align: left;">Заавар бичлэг</h2>
+                <div id="video-container" style="width: 100%; height: 50vh; background: #0f172a; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: #0ea5e9;">
+                    <i class="fa-solid fa-play fa-4x"></i>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- GEMINI API CONFIGURATION ---
+        const apiKey = ""; 
+        const modelName = "gemini-2.5-flash-preview-09-2025";
+        
+        async function callGeminiAPI(promptOrHistory, systemInstruction = "") {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+            
+            let contents;
+            if (typeof promptOrHistory === 'string') {
+                contents = [{ role: "user", parts: [{ text: promptOrHistory }] }];
+            } else {
+                contents = promptOrHistory;
+            }
+
+            const payload = { contents: contents };
+            if (systemInstruction) payload.systemInstruction = { parts: [{ text: systemInstruction }] };
+
+            const retries = [1000, 2000, 4000, 8000];
+            for (let i = 0; i <= retries.length; i++) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const result = await response.json();
+                    return result.candidates?.[0]?.content?.parts?.[0]?.text || "AI хариулт өгөхөд алдаа гарлаа.";
+                } catch (error) {
+                    if (i === retries.length) return "Уучлаарай, AI системтэй холбогдоход алдаа гарлаа.";
+                    await new Promise(res => setTimeout(res, retries[i]));
+                }
+            }
+        }
+
+        // --- GLOBAL KNOWLEDGE BASE ---
+        const globalKnowledgeBase = `
+        TUSS.io платформын МЭДЛЭГИЙН САН БА ТҮГЭЭМЭЛ АСУУЛТУУД (FAQ):
+        
+        1. ТАНИЛЦУУЛГА: TUSS.io нь хиймэл оюунд суурилсан байгууллагын процесс, стандарт, дүрэм журмын нийцлийн удирдлагын SaaS платформ юм. 2016 оноос хойш хөгжүүлэгдсэн, зөвлөх үйлчилгээний 10 жилийн туршлагатай компани бөгөөд TUSS.io-г SaaS хэлбэрээр 2 дахь жилдээ зах зээлд нийлүүлж байна.
+        2. АЮУЛГҮЙ БАЙДАЛ БА СЕРВЕР: Google Cloud Server дээр мэдээлэл байршдаг. ISO 27001, 9001 стандартын шаардлагыг хангасан. Хэрэглэгчийн өгөгдлийг AI загвар сургахад АШИГЛАХГҮЙ. Өгөгдөл бүрэн шифрлэгдсэн (Encrypted in transit and at rest).
+        3. БАГЦ БА ҮНЭ: Starter багц (24,000₮/сар/хэрэглэгч), Standard багц (33,000₮/сар/хэрэглэгч), Premium багц (350,000₮/сар/хэрэглэгч). 1 төлбөртэй хэрэглэгч тутамд 1 зочин (Guest) эрх үнэгүй дагалдана. Нэмэлт зочин эрх сарын $7. 14 хоног үнэгүй турших эрхтэй. 1 и-мэйлээр 1 л хэрэглэгч нэвтрэх боломжтой. (Үнэд НӨАТ ороогүй).
+        4. ОНЦЛОГ: Бүх салбарт (үйлдвэрлэл, барилга, ложистик г.м) тохиромжтой. Дэлхийн аль ч улсад ашиглах боломжтой, олон хэл дэмждэг. Зөвхөн нэг стандартын бус (Framework-agnostic) бүх төрлийн стандарт, хууль, журам (ISO, EcoVadis) оруулж шалгах боломжтой.
+        5. AI ШИЙДЭЛ (Gemini 2.5): AI нь оруулсан PDF, зураг, баримтыг уншиж шаардлагатай харьцуулан Gap analysis (зөрүүний шинжилгээ) хийдэг. Мөн дутуу байгаа зүйлд тохирох 'Даалгавар' (Mitigation task) санал болгох, Дүрэм журам, маягт драфтлах зэрэг 'Шидэт саваа'-ны функцтэй. Одоогийн байдлаар AI хэрэглээ хязгааргүй байгаа.
+        6. ИНТЕГРАЦИ БА ФАЙЛ: Google болон Microsoft-той шууд холбогдоно. Gmail ашиглаж нэвтрэх бүрэн боломжтой. Баримт бичиг оруулахад PDF/PNG форматтай, 10MB хязгаартай байхыг зөвлөдөг. Нэг шалгуурт олон нотлох баримт хавсаргаж болно.
+        7. БАЙГУУЛЛАГЫН СУУРЬ ТОХИРГОО ХИЙХ ЗААВАР: 
+           - Нэвтрэх: new.tuss.io хаягаар нэвтэрнэ.
+           - Үндсэн мэдээлэл: 'Байгууллага' хэсэгт компанийн нэр, лого, Алсын хараа, Эрхэм зорилгоо оруулна.
+           - Газар нэгж (Бүтэц): 'Газар нэгж' цэсэнд хэлтэс үүсгэх, дэд нэгж үүсгэх, архивлах, менежер оноох.
+           - Үүрэг, роль (Ажлын байр): 'Үүрэг роль' цэснээс Гүйцэтгэх захирал, Менежер зэрэг үүрэг үүсгэж, эрхийг нарийвчлан тохируулна. (Ж: Төслийн менежер нь Гүйцэтгэх захирлаас бага эрхтэй байна).
+           - Ажилтан нэмэх: 'Ажилтан' цэсээр орж имэйлээр урих ба устгасан ажилтны мэдээлэл Архивт орно.
+        8. ХЯЗГААРЛАЛТ: Санхүүгийн тооцоолол хийхгүй (Excel хавсаргах боломжтой). Бизнес төлөвлөгөө, сургалтын хөтөлбөр шууд боловсруулахгүй ч тэдгээрийн процессыг удирдахад төгс зохицно.
+        9. ДҮРЭМ ЖУРАМ БА АВТОМАТЖУУЛАЛТ: Байгууллагын дүрэм журмыг системд бүлэг, заалтаар нь оруулж, заалт бүрд 'Үйлдэл' тохируулснаар тухайн дүрмээс хамаарсан даалгаврууд автоматаар (өдөр, долоо хоног, сар, жилээр) хариуцсан ажилтнуудад үүсэж хуваарилагддаг. Мөн журмыг удирдлагаар цахимаар батлуулах, нийт ажилтнуудаар 'Уншиж танилцсан' төлөвөөр баталгаажуулах бүрэн боломжтой бөгөөд энэ нь журмыг зүгээр цаас биш 'амьд систем' болгодог.
+        `;
+
+        const moduleKnowledge = {
+            foundation: "Суурь тохиргооны хэсэгт байгууллагын мэдээлэл, газар нэгжийн бүтэц, ажлын байрны үүрэг роль болон ажилтнуудын бүртгэлийг хийдэг. Энэ нь системийн ажиллах хамгийн чухал 'араг яс' юм.",
+            profile: "Профайл хэсэгт ажилтан өөрийн зураг, утасны дугаар, гэрийн хаяг болон ажлын цагийн хуваарийг оруулна.",
+            task: "Ажил модульд хэрэглэгч өөрийн хийх ажлуудаа үүсгэж Канбан самбарт оруулна. Мөн AI шидэт саваагаар шинэ ажил үүсгэх, шүүгдсэн ажлуудыг нэгтгэн Ажлын тайлан боловсруулуулах боломжтой.",
+            weekly: "Долоо хоног модульд ажилтан ирэх 7 хоногт хийх чухал ажлуудаа цагийн хуваарийн дагуу төлөвлөнө.",
+            goal: "Зорилго модульд байгууллагын ерөнхий зорилгоос салбарлан хэлтэс болон ажилтан өөрийн OKR зорилтыг зооно.",
+            diagnosis: "Оношилгоо хэсэгт ажлын явцад гарч буй асуудлыг баримтжуулан бүртгэж, үндсэн шалтгааныг илрүүлнэ.",
+            hr: "Хүний нөөцийн (HR) модуль нь байгууллагын ирц, цагийн бүртгэлийг удирдах зорилготой. Үүнд: 1. Ажлын хуваарь: Ажиллах цаг, хүлцэх хугацаа (хоцролт тооцохгүй минут), илүү цаг, зайнаас ажиллах зөвшөөрөл зэргийг тохируулна. 2. Оффис байршил: Газрын зураг (Google Map) дээр оффисын байршлыг тэмдэглэж, ирц бүртгүүлэх радиусыг зааж өгнө. 3. Ирцийн бүртгэл: Ажилтан оффис дээр ирээд гар утсаараа байршлаа баталгаажуулан ирцээ бүртгүүлнэ. 4. Оффсайт & Чөлөө: Гадуур ажиллах, чөлөө авах хүсэлтийг шалтгаан, файлын хамт илгээж батлуулна. 5. Ээлжийн амралт: Амралтын өдрөө төлөвлөж авна.",
+            document: "Дүрэм журам болон Бичиг баримтын модульд байгууллагын дүрэм журам, стандарт, маягтуудыг үүсгэн цэгцтэй хадгална. Хамгийн гол онцлог нь: Журмын заалт бүрээс автоматаар ажил үүсгэх (Action) тохиргоо хийж болно. Ингэснээр журам нь амьд систем болно. Мөн баримт бичгийг бусдад хуваалцах, цуваа/зэрэгцээ дарааллаар батлуулах, ажилтнуудаар уншиж танилцсан гарын үсэг зуруулах, AI шидэт саваагаар дүрэм журам болон маягт драфтлах боломжтой.",
+            dashboard: "Хянах самбар (Dashboard) хэсэгт байгууллага, баг, ажилтны гүйцэтгэлийг бодит цагт графикаар харуулна. 'Ажил' цэсний 'Нэгтгэл' хэсгээс хандах ба нийт төлөвлөсөн, хийгдэж буй, дууссан болон хугацаа хэтэрсэн ажлуудын тоон мэдээллийг харна. Мөн ажлын урсгал (процесс) болон хавтсаар ангилсан графикуудыг харуулна. Хэрэглэгч огноо, ажилтан, хэлтэс зэргээр шүүлтүүр (filter) хийж харах боломжтой бөгөөд өөрт хэрэгтэй шүүгдсэн графикуудаа хадгалан өөрийн 'Custom dashboard' буюу тусгайлсан хянах самбарыг угсарч ашиглах боломжтой."
+        };
+
+        // --- DATA ---
+        const moduleData = [
+            { id: 'profile', partClass: 'r-visor', icon: 'fa-id-badge', title: 'Профайл', goal: 'Мэдээллээ бүрдүүлэх', theoryTitle: 'Байгууллагын соёл', theoryText: 'Систем дэх профайл нь хамтын ажиллагааны итгэлцлийг бий болгоно.', taskTitle: 'Профайл шинэчлэх', taskDesc: 'Мэдээлэл, хуваариа 100% оруулах.' },
+            { id: 'task', partClass: 'r-arm-r', icon: 'fa-list-check', title: 'Ажил', goal: 'Ажлаа төлөвлөх, удирдах', theoryTitle: 'PDCA & Канбан', theoryText: 'Канбан самбар нь ажлын гацалтыг нүдэнд харагдахуйц болгож сайжруулна.', taskTitle: 'Шинэ ажил үүсгэх', taskDesc: 'Туршилтын даалгавар үүсгэн төлөв өөрчлөх.' },
+            { id: 'weekly', partClass: 'r-arm-l', icon: 'fa-calendar-days', title: 'Долоо хоног', goal: 'Цагийн менежмент хийх', theoryTitle: 'Timeboxing', theoryText: 'Төлөвлөлт нь анхаарал сарниулах зүйлсээс сэргийлж, чухал ажилд цаг гаргана.', taskTitle: '7 хоногоо төлөвлөх', taskDesc: 'Ирэх 7 хоногт хийх 3 чухал ажлаа оруулах.' },
+            { id: 'goal', partClass: 'r-chest', icon: 'fa-bullseye', title: 'Зорилго', goal: 'Стратегитэй уялдах', theoryTitle: 'OKR аргачлал', theoryText: 'OKR нь илүү амбицтай бөгөөд багийн урам зоригийг сэргээхэд чиглэдэг.', taskTitle: 'Зорилт тодорхойлох', taskDesc: 'Энэ сард хүрэх 1 зорилтоо системд оруулах.' },
+            { id: 'diagnosis', partClass: 'r-antenna', icon: 'fa-stethoscope', title: 'Оношилгоо', goal: 'Асуудлыг илрүүлэх', theoryTitle: 'Root Cause Analysis', theoryText: '"5 Whys" аргачлал нь асуудлын өнгөнөөс гүн рүү ухаж шийдэл олоход тусална.', taskTitle: 'Асуудал бүртгэх', taskDesc: 'Ажлын явцад гарсан 1 саадыг бүртгэх.' },
+            { id: 'hr', partClass: 'r-head', icon: 'fa-users', title: 'Хүний нөөц', goal: 'Багийн үнэлгээ, ур чадвар', theoryTitle: 'Идэвхжүүлэлт', theoryText: '360 үнэлгээ нь бие биенээ бүтээлчээр шүүмжлэх, урамшуулах соёлыг төлөвшүүлнэ.', taskTitle: 'Ур чадварын үнэлгээ', taskDesc: 'Хамт ажилладаг хүндээ үнэлгээ өгөх.' },
+            { id: 'document', partClass: 'r-leg-r', icon: 'fa-file-shield', title: 'Бичиг баримт', goal: 'Дүрэм журамтай танилцах', theoryTitle: 'Мэдлэгийн менежмент', theoryText: 'Журам тодорхой байх нь алдааг бууруулж, тогтвортой байдлыг хангана.', taskTitle: 'Журамтай танилцах', taskDesc: 'Нэг баримт бичиг нээж уншин баталгаажуулах.' },
+            { id: 'dashboard', partClass: 'r-leg-l', icon: 'fa-chart-pie', title: 'Хянах самбар', goal: 'Үр дүнгээ бодит цагт хянах', theoryTitle: 'Өгөгдөлд суурилсан шийдвэр', theoryText: 'Хянах самбар нь гүйцэтгэлийг үнэлж, цаг алдалгүй шийдвэр гаргахад тусална.', taskTitle: 'Гүйцэтгэлээ хянах', taskDesc: 'Өөрийн оноо, нийцлийн хувийг шалгах.' }
+        ];
+
+        // --- STATE MANAGEMENT ---
+        let masterCompletedModules = []; // Modules successfully studied in previous loops
+        let currentSelectedModules = []; // Modules currently checked in the grid
+        let currentSlideIndex = 0;
+        let totalSlides = 3; 
+        let dynamicSlidesGenerated = false;
+        
+        let currentTheoryModuleId = null;
+        let aiChatHistory = []; 
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderModuleGrid();
+            updateNavigation();
+        });
+
+        // Loop Logic: Only show modules that are NOT in masterCompletedModules
+        function renderModuleGrid() {
+            const grid = document.getElementById('module-grid');
+            grid.innerHTML = '';
+            
+            let availableCount = 0;
+            moduleData.forEach(mod => {
+                if (masterCompletedModules.includes(mod.id)) return; // Skip completed
+                
+                availableCount++;
+                const card = document.createElement('div');
+                card.className = 'module-card';
+                card.id = `card-${mod.id}`;
+                card.innerHTML = `<i class="fa-solid ${mod.icon}"></i><h4>${mod.title}</h4>`;
+                card.onclick = () => toggleModule(mod.id);
+                grid.appendChild(card);
+            });
+
+            // Update UI text to reflect progress
+            const combinedLength = masterCompletedModules.length + currentSelectedModules.length;
+            document.getElementById('selection-status').innerText = `Нийт угсарсан: ${combinedLength} / 8`;
+            
+            // Render the background robot with master + current
+            updateSelectionRobotDisplay();
+        }
+
+        function toggleModule(id) {
+            const idx = currentSelectedModules.indexOf(id);
+            const cardEl = document.getElementById(`card-${id}`);
+            
+            if (idx > -1) {
+                currentSelectedModules.splice(idx, 1);
+                if (cardEl) cardEl.classList.remove('selected');
+            } else {
+                currentSelectedModules.push(id);
+                if (cardEl) cardEl.classList.add('selected');
+            }
+            
+            const combinedLength = masterCompletedModules.length + currentSelectedModules.length;
+            document.getElementById('selection-status').innerText = `Нийт угсарсан: ${combinedLength} / 8`;
+            
+            updateSelectionRobotDisplay();
+
+            dynamicSlidesGenerated = false; 
+            updateNavigation();
+        }
+
+        function updateSelectionRobotDisplay() {
+            const bg = document.getElementById('selection-robot-bg');
+            const container = bg.querySelector('.r-container');
+            
+            // Re-render robot with both arrays
+            const combinedArray = [...masterCompletedModules, ...currentSelectedModules];
+            container.outerHTML = getRobotPreviewHtml(combinedArray);
+            
+            if(combinedArray.length === 8) {
+                bg.style.borderColor = '#bae6fd'; bg.style.backgroundColor = '#f0f9ff';
+            } else {
+                bg.style.borderColor = '#e2e8f0'; bg.style.backgroundColor = '#f8fafc';
+            }
+        }
+
+        function updateNavigation() {
+            const btnPrev = document.getElementById('btn-prev');
+            const btnNext = document.getElementById('btn-next');
+            
+            // Prev Button: Hidden on Slide 0, and also hide it if we looped back and are on Slide 2
+            if (currentSlideIndex === 0 || (currentSlideIndex === 2 && masterCompletedModules.length > 0)) {
+                btnPrev.classList.add('nav-hidden');
+            } else {
+                btnPrev.classList.remove('nav-hidden');
+            }
+
+            // Next Button
+            if (dynamicSlidesGenerated && currentSlideIndex === totalSlides - 1) {
+                btnNext.classList.add('nav-hidden');
+            } else {
+                btnNext.classList.remove('nav-hidden');
+            }
+
+            // Selection Slide validation
+            if (currentSlideIndex === 2) {
+                if (currentSelectedModules.length === 0) {
+                    btnNext.classList.add('btn-disabled');
+                    btnNext.innerHTML = 'Эд анги сонгоно уу';
+                } else {
+                    btnNext.classList.remove('btn-disabled');
+                    btnNext.innerHTML = 'Дараах <i class="fa-solid fa-chevron-right"></i>';
+                }
+            } else {
+                btnNext.classList.remove('btn-disabled');
+                btnNext.innerHTML = 'Дараах <i class="fa-solid fa-chevron-right"></i>';
+            }
+
+            renderProgressDots();
+        }
+
+        function renderProgressDots() {
+            const indicatorContainer = document.getElementById('progress-indicator');
+            indicatorContainer.innerHTML = '';
+
+            let actualTotalSlides = totalSlides;
+            if (currentSlideIndex <= 2 && !dynamicSlidesGenerated && currentSelectedModules.length > 0) {
+                // If it's a loop, slide 0 and 1 are skipped essentially.
+                // But let's just show dots for the current physical slides.
+                const isLoop = masterCompletedModules.length > 0;
+                const baseSlides = isLoop ? 1 : 3; // On loop, only slide 2 matters as base
+                const isFinalLoop = (masterCompletedModules.length + currentSelectedModules.length === 8);
+                actualTotalSlides = baseSlides + currentSelectedModules.length + 1 + (isFinalLoop ? 1 : 1); 
+            }
+
+            // Simplified dots: Just match currentSlideIndex up to totalSlides
+            for (let i = 0; i < actualTotalSlides; i++) {
+                // Adjust index check if we are looping to avoid showing too many dots early on
+                let isActive = false;
+                let isCompleted = false;
+                
+                const isLoop = masterCompletedModules.length > 0;
+                
+                if (isLoop) {
+                    // Logic shift for loops. Current index is mathematically higher than dot index.
+                    let logicalIndex = currentSlideIndex - 2; 
+                    if (i === logicalIndex) isActive = true;
+                    if (i < logicalIndex) isCompleted = true;
+                } else {
+                    if (i === currentSlideIndex) isActive = true;
+                    if (i < currentSlideIndex) isCompleted = true;
+                }
+
+                const dot = document.createElement('div');
+                dot.classList.add('dot');
+                if (isActive) dot.classList.add('active');
+                if (isCompleted) dot.classList.add('completed');
+                indicatorContainer.appendChild(dot);
+            }
+        }
+
+        function showSlide(index) {
+            document.querySelectorAll('.slide').forEach((slide, i) => {
+                slide.classList.remove('active');
+                if (i === index) slide.classList.add('active');
+            });
+            currentSlideIndex = index;
+            updateNavigation();
+        }
+
+        function nextSlide() {
+            if (currentSlideIndex === 2 && currentSelectedModules.length === 0) {
+                alert("Та дор хаяж 1 эд анги (модуль) сонгох шаардлагатай!");
+                return; 
+            }
+            if (currentSlideIndex === 2 && !dynamicSlidesGenerated) generateDynamicSlides();
+            if (currentSlideIndex < totalSlides - 1) showSlide(currentSlideIndex + 1);
+        }
+
+        function prevSlide() {
+            if (currentSlideIndex > 0) showSlide(currentSlideIndex - 1);
+        }
+
+        // Loop Function
+        function loopBackToSelection() {
+            // Save progress
+            masterCompletedModules.push(...currentSelectedModules);
+            currentSelectedModules = [];
+            dynamicSlidesGenerated = false;
+            
+            // Clean up old slides
+            const wrapper = document.getElementById('slides-wrapper');
+            while (wrapper.children.length > 3) wrapper.removeChild(wrapper.lastChild);
+            totalSlides = 3;
+            
+            // Reset UI
+            renderModuleGrid();
+            showSlide(2);
+        }
+
+        function getRobotPreviewHtml(activeModuleIds, thinking = false) {
+            const isFilled = (id) => activeModuleIds.includes(id) ? 'filled' : '';
+            const isThinking = thinking ? 'ai-thinking' : '';
+            return `
+                <div class="r-container">
+                    <div class="r-base" style="background: #0ea5e9; border-color: #0284c7;"></div>
+                    <div class="r-part r-antenna ${isFilled('diagnosis')}"></div>
+                    <div class="r-part r-head ${isFilled('hr')}"></div>
+                    <div class="r-part r-visor ${isFilled('profile')}"></div>
+                    <div class="r-part r-chest ${isFilled('goal')} ${isThinking}"><div class="r-core-light"></div></div>
+                    <div class="r-part r-arm-r ${isFilled('task')}"></div>
+                    <div class="r-part r-arm-l ${isFilled('weekly')}"></div>
+                    <div class="r-part r-leg-r ${isFilled('document')}"></div>
+                    <div class="r-part r-leg-l ${isFilled('dashboard')}"></div>
+                </div>
+            `;
+        }
+
+        function generateDynamicSlides() {
+            const wrapper = document.getElementById('slides-wrapper');
+            while (wrapper.children.length > 3) wrapper.removeChild(wrapper.lastChild);
+
+            let slideHtml = '';
+            let slideIndexCount = 3;
+            
+            // The robot should show master + current progress progressively
+            let currentRobotParts = [...masterCompletedModules]; 
+
+            // 1. LESSON SLIDES
+            currentSelectedModules.forEach((moduleId, index) => {
+                const mod = moduleData.find(m => m.id === moduleId);
+                currentRobotParts.push(moduleId); 
+                
+                slideHtml += `
+                <div class="slide" id="slide-${slideIndexCount}">
+                    <h2 class="slide-title">Хичээл: ${mod.title}</h2>
+                    <div class="content-area">
+                        <div class="two-column">
+                            <div>
+                                <h3 style="font-size: clamp(20px, 3vh, 24px); margin-bottom: 1vh;">Энэ хэсгийг суулгаснаар:</h3>
+                                <p style="margin-bottom: 2vh; font-weight: 700; color: #0ea5e9; font-size: clamp(16px, 2.5vh, 20px);">${mod.goal}</p>
+                                <p style="margin-bottom: 3vh;">Дараах товчууд дээр дарж уг модулийг хэрхэн ашиглах заавар болон онолтой танилцана уу.</p>
+                                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                                    <button class="btn btn-primary" onclick="openVideoModal('${mod.title}')"><i class="fa-solid fa-play"></i> Заавар үзэх</button>
+                                    <button class="btn btn-secondary" onclick="openTheoryModal('${moduleId}')"><i class="fa-solid fa-sparkles"></i> Онол & AI Багш</button>
+                                </div>
+                            </div>
+                            <div class="robot-display">
+                                ${getRobotPreviewHtml(currentRobotParts)}
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+                slideIndexCount++;
+            });
+
+            // 2. TASK SLIDE
+            let taskListHtml = '';
+            currentSelectedModules.forEach(moduleId => {
+                const mod = moduleData.find(m => m.id === moduleId);
+                taskListHtml += `<li><i class="fa-solid ${mod.icon}"></i><strong>${mod.title} - ${mod.taskTitle}</strong>${mod.taskDesc}</li>`;
+            });
+
+            const totalActiveNow = [...masterCompletedModules, ...currentSelectedModules];
+
+            slideHtml += `
+            <div class="slide" id="slide-${slideIndexCount}">
+                <h2 class="slide-title">Идэвхжүүлэх Даалгавар</h2>
+                <div class="content-area">
+                    <div class="two-column">
+                        <div>
+                            <p style="margin-bottom: 2vh; font-size: 18px;">Роботын суулгасан эд ангиудыг бүрэн ажиллагаанд оруулахын тулд TUSS.IO системд нэвтэрч дараах даалгавруудыг хийнэ үү.</p>
+                            <ul class="task-list" id="dynamic-task-list">
+                                ${taskListHtml}
+                            </ul>
+                        </div>
+                        <div class="robot-display" id="task-robot-display">
+                             ${getRobotPreviewHtml(totalActiveNow)}
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+            slideIndexCount++;
+
+            // 3. CONDITIONAL CHECK (Loop or End)
+            if (totalActiveNow.length < 8) {
+                const missingHtml = moduleData.filter(m => !totalActiveNow.includes(m.id))
+                    .map(m => `<span style="display:inline-block; background:#f1f5f9; padding:5px 12px; border-radius:20px; margin:5px; font-size:12px; font-weight:700; color:#475569;"><i class="fa-solid ${m.icon}" style="color:#0ea5e9; margin-right:5px;"></i> ${m.title}</span>`)
+                    .join('');
+
+                slideHtml += `
+                <div class="slide" id="slide-${slideIndexCount}">
+                    <div class="content-area">
+                        <div class="two-column">
+                            <div>
+                                <h1 style="text-align: left; color: #f59e0b; font-size: clamp(28px, 4vh, 38px); margin-bottom: 2vh;"><i class="fa-solid fa-triangle-exclamation"></i> РОБОТ ДУТУУ БАЙНА!</h1>
+                                <p style="margin-bottom: 2vh;">Та зарим модулиудыг алгассан тул таны робот <strong>100% ажиллах чадамжгүй</strong> (дутуу эд ангитай) байна.</p>
+                                <p style="margin-bottom: 3vh;">Та роботоо бүрэн төгс ажиллуулж, өөрийнхөө өмнөөс удирдуулахын тулд <strong>БҮХ МОДУЛИЙГ</strong> судалж, угсрах шаардлагатай.</p>
+                                <div style="margin-bottom: 3vh; background:#fffbeb; border:1px solid #fde68a; padding:2vh; border-radius:12px;">
+                                    <p style="font-size: 14px; color: #d97706; text-transform: uppercase; font-weight: 800; margin-bottom:1vh;">Судлаагүй үлдсэн хэсгүүд:</p>
+                                    <div>${missingHtml}</div>
+                                </div>
+                                <button class="btn btn-warning" onclick="loopBackToSelection()">Үлдсэн эд ангиа угсрах <i class="fa-solid fa-rotate-right"></i></button>
+                            </div>
+                            <div class="robot-display" style="border-color: #fef3c7; background: #fffbeb;">
+                                 ${getRobotPreviewHtml(totalActiveNow)}
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            } else {
+                slideHtml += `
+                <div class="slide" id="slide-${slideIndexCount}">
+                    <div class="content-area">
+                        <div class="two-column">
+                            <div>
+                                <h1 style="text-align: left; color: #10b981; margin-bottom: 2vh;">ТӨГС УГСРАГДЛАА!</h1>
+                                <p style="margin-bottom: 2vh;">Гайхалтай! Та TUSS.IO системийн бүх 8 модулийг амжилттай судалж, роботоо 100% бүрэн бүтэн болгож чадлаа.</p>
+                                <p class="poppins blue" style="font-size: clamp(18px, 3vh, 24px); font-weight: 900; margin-top: 3vh; border-left: 4px solid #0ea5e9; padding-left: 15px;">"Одоо би таны өмнөөс ажиллахад бэлэн."</p>
+                                <a href="https://new.tuss.io/login/en/" target="_blank" class="btn btn-primary" style="margin-top: 4vh; text-decoration: none;">TUSS.IO руу нэвтрэх <i class="fa-solid fa-arrow-right-to-bracket"></i></a>
+                            </div>
+                            <div class="robot-display fully-complete" style="border-color: #6ee7b7; background: #ecfdf5;">
+                                ${getRobotPreviewHtml(totalActiveNow)}
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            }
+            slideIndexCount++;
+
+            wrapper.insertAdjacentHTML('beforeend', slideHtml);
+            totalSlides = slideIndexCount;
+            dynamicSlidesGenerated = true;
+            renderProgressDots();
+        }
+
+        // --- GEMINI AI UNIFIED THEORY CHAT (GLOBAL KNOWLEDGE AWARE) ---
+        function appendChatMessage(sender, text, isTyping = false) {
+            const chatContainer = document.getElementById('ai-chat-container');
+            const msgDiv = document.createElement('div');
+            
+            if (isTyping) {
+                msgDiv.className = 'chat-msg msg-ai';
+                msgDiv.id = 'ai-typing-indicator';
+                msgDiv.innerHTML = '<strong>✨ AI Робот:</strong><br><span class="loading-dots">Бодож байна</span>';
+            } else if (sender === 'user') {
+                msgDiv.className = 'chat-msg msg-user';
+                msgDiv.innerHTML = text;
+            } else {
+                msgDiv.className = 'chat-msg msg-ai';
+                msgDiv.innerHTML = `<strong>✨ AI Багш:</strong><br>${text}`;
+            }
+            
+            chatContainer.appendChild(msgDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function openTheoryModal(moduleId) {
+            currentTheoryModuleId = moduleId;
+            const mod = moduleData.find(m => m.id === moduleId);
+            
+            document.getElementById('modal-title').innerHTML = `<i class="fa-solid fa-robot blue"></i> ✨ AI Багш: ${mod.title}`;
+            aiChatHistory = []; 
+            const chatContainer = document.getElementById('ai-chat-container');
+            chatContainer.innerHTML = '';
+            
+            const theoryGreeting = `Энэхүү <strong>"${mod.theoryTitle}"</strong>-н талаар товчхондоо:<br><br><em>${mod.theoryText}</em><br><br>Танд системийн болон онолын талаар асуух зүйл байна уу?`;
+            appendChatMessage('ai', theoryGreeting);
+            
+            // Add initial context to history so AI doesn't forget
+            aiChatHistory.push({ role: "model", parts: [{ text: "Сайн байна уу. " + theoryGreeting }] });
+
+            document.getElementById('ai-question-input').value = '';
+            document.getElementById('theory-modal').classList.add('active');
+        }
+
+        function handleKeyPress(e) {
+            if (e.key === 'Enter') askAITutor();
+        }
+
+        async function askAITutor() {
+            const inputEl = document.getElementById('ai-question-input');
+            const question = inputEl.value.trim();
+            if (!question || !currentTheoryModuleId) return;
+
+            const btn = document.getElementById('ai-ask-btn');
+            
+            appendChatMessage('user', question);
+            aiChatHistory.push({ role: "user", parts: [{ text: question }] });
+            inputEl.value = '';
+
+            btn.disabled = true;
+            appendChatMessage('ai', '', true);
+
+            const mod = moduleData.find(m => m.id === currentTheoryModuleId);
+            
+            let allModulesKb = "";
+            for(let key in moduleKnowledge) {
+                allModulesKb += `- ${moduleKnowledge[key]}\n`;
+            }
+
+            const systemInst = `Та бол TUSS.IO системийн туслах AI багш. Хэрэглэгч одоо "${mod.title}" модулийн "${mod.theoryTitle}" онолыг судалж байна.
+            
+            ТАНЫ АШИГЛАХ МЭДЛЭГИЙН САН (GLOBAL KNOWLEDGE BASE):
+            ${globalKnowledgeBase}
+            
+            МОДУЛИУДЫН ДЭЛГЭРЭНГҮЙ МЭДЭЭЛЭЛ:
+            ${allModulesKb}
+            
+            ХАТУУ ДҮРМҮҮД:
+            1. Хэрэглэгч аль ч модулийн талаар эсвэл Гэрээ, Багцуудын мэдээлэл, Үнэ төлбөр, Нууцлал, Күүкис болон ерөнхий системийн талаар асуусан ЗӨВХӨН дээрх 'МЭДЛЭГИЙН САН'-аас харж хариулна.
+            2. Хэрэв хэрэглэгч мэдлэгийн санд байхгүй зүйл эсвэл өөр систем, модулийн талаар асуувал: "Уучлаарай, энэ талаар надад мэдээлэл алга байна." гэж хариулах. ӨӨРӨӨСӨӨ БҮҮ ЗОХИО (No Hallucination).
+            3. TUSS.IO систем нь ЗӨВХӨН дараах 8 модультай: 1.Профайл, 2.Ажил, 3.Долоо хоног, 4.Зорилго, 5.Оношилгоо, 6.Хүний нөөц, 7.Дүрэм журам & Баримт, 8.Хянах самбар. Өөр модуль БАЙХГҮЙ.
+            4. ХЭЗЭЭ Ч дахин мэндлэхгүй (Сайн уу, Сайн байна уу гэж эхлэхгүй). Шууд асуултад хариул.
+            5. Хариулт урт нуршуу биш, товч тодорхой (3-4 өгүүлбэр) байх. HTML (<br>, <strong>, <ul>) ашиглаж болно. Markdown бүү ашигла.`;
+
+            // fixed the missing prompt variable by providing aiChatHistory properly to the API function
+            const aiResponse = await callGeminiAPI(aiChatHistory, systemInst);
+            
+            // Add the response from AI to the chat history
+            aiChatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
+
+            const typingIndicator = document.getElementById('ai-typing-indicator');
+            if (typingIndicator) typingIndicator.remove();
+            
+            const cleanedResponse = aiResponse.replace(/```html/g, '').replace(/```/g, '').trim();
+            appendChatMessage('ai', cleanedResponse);
+
+            btn.disabled = false;
+        }
+
+        function openVideoModal(moduleTitle) {
+            document.getElementById('video-title').innerText = `${moduleTitle} - Заавар бичлэг`;
+            const videoContainer = document.getElementById('video-container');
+            
+            if (!videoContainer) return;
+
+            // Reset container styles
+            videoContainer.style.overflowY = 'hidden';
+            videoContainer.style.justifyContent = 'center';
+            videoContainer.style.alignItems = 'center';
+            videoContainer.style.padding = '0';
+            
+            if (moduleTitle === 'Суурь тохиргоо') {
+                videoContainer.innerHTML = `
+                    <iframe src="https://drive.google.com/file/d/1cW7jtUtneHVDjlL065rFVyA8X_AYRim8/preview" width="100%" height="100%" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen style="border-radius: 16px;"></iframe>`;
+            } else if (moduleTitle === 'Ажил') {
+                videoContainer.style.overflowY = 'auto';
+                videoContainer.style.justifyContent = 'flex-start';
+                videoContainer.style.padding = '20px';
+                videoContainer.innerHTML = `
+                    <div style="width: 100%; display: flex; flex-direction: column; gap: 25px;">
+                        <div style="width: 100%; height: 350px;">
+                            <p style="font-size: 16px; margin-bottom: 10px; color: #bae6fd; font-weight: 700; text-align: left;"><i class="fa-solid fa-list-check"></i> 1. Үндсэн заавар</p>
+                            <iframe src="https://drive.google.com/file/d/1ZDXj8pXMtuWj3Vl9h5xOPZEtrC1miDpq/preview" width="100%" height="100%" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen style="border-radius: 12px;"></iframe>
+                        </div>
+                        <div style="width: 100%; height: 350px; border-top: 1px dashed #334155; padding-top: 20px;">
+                            <p style="font-size: 16px; margin-bottom: 10px; color: #bae6fd; font-weight: 700; text-align: left;"><i class="fa-solid fa-wand-magic-sparkles"></i> 2. AI шийдэл</p>
+                            <iframe src="https://drive.google.com/file/d/1VQdTlrHlbhpGQiFE7kL2U1AKkVPwAlJi/preview" width="100%" height="100%" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen style="border-radius: 12px;"></iframe>
+                        </div>
+                    </div>`;
+            } else if (moduleTitle === 'Долоо хоног') {
+                videoContainer.innerHTML = `
+                    <iframe src="https://drive.google.com/file/d/1xrY34oGpkVh0V9aQzt8szJD91x8zNMDE/preview" width="100%" height="100%" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen style="border-radius: 16px;"></iframe>`;
+            } else if (moduleTitle === 'Зорилго') {
+                videoContainer.innerHTML = `
+                    <iframe src="https://drive.google.com/file/d/1KeWbWj3qTyvQSSRDtON3RBBnr-yt61xV/preview" width="100%" height="100%" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen style="border-radius: 16px;"></iframe>`;
+            } else if (moduleTitle === 'Хүний нөөц') {
+                videoContainer.innerHTML = `
+                    <iframe src="https://drive.google.com/file/d/1EF9cs1XSCDyX6gfpXBigzxxwQrpDQOG7/preview" width="100%" height="100%" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen style="border-radius: 16px;"></iframe>`;
+            } else if (moduleTitle === 'Хянах самбар') {
+                videoContainer.innerHTML = `
+                    <iframe src="https://drive.google.com/file/d/1Iymolisg1tVZiIQyETO3B0bruTZKEy3M/preview" width="100%" height="100%" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen style="border-radius: 16px;"></iframe>`;
+            } else if (moduleTitle === 'Бичиг баримт' || moduleTitle === 'Дүрэм журам & Баримт') {
+                videoContainer.style.overflowY = 'auto';
+                videoContainer.style.justifyContent = 'flex-start';
+                videoContainer.style.padding = '20px';
+                videoContainer.innerHTML = `
+                    <div style="width: 100%; display: flex; flex-direction: column; gap: 25px;">
+                        <div style="width: 100%; height: 350px;">
+                            <p style="font-size: 16px; margin-bottom: 10px; color: #bae6fd; font-weight: 700; text-align: left;"><i class="fa-solid fa-gavel"></i> 1. Дүрэм журам</p>
+                            <iframe src="https://drive.google.com/file/d/1TlNO1B-QK6Fzi5IZDqlbQp_VfkOYGqFD/preview" width="100%" height="100%" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen style="border-radius: 12px;"></iframe>
+                        </div>
+                        <div style="width: 100%; height: 350px; border-top: 1px dashed #334155; padding-top: 20px;">
+                            <p style="font-size: 16px; margin-bottom: 10px; color: #bae6fd; font-weight: 700; text-align: left;"><i class="fa-solid fa-file-signature"></i> 2. Бичиг баримт (Маягт)</p>
+                            <iframe src="https://drive.google.com/file/d/1E67biSzM8S2GXfaWqWmVEhU8ArE0m9-S/preview" width="100%" height="100%" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen style="border-radius: 12px;"></iframe>
+                        </div>
+                    </div>`;
+            } else {
+                videoContainer.innerHTML = `
+                    <i class="fa-solid fa-play fa-4x"></i>
+                    <p style="margin-top: 15px; font-family: 'Nunito', sans-serif;">${moduleTitle} модулийн бичлэг тун удахгүй орно...</p>
+                `;
+            }
+            
+            document.getElementById('video-modal').classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+            if(modalId === 'video-modal') {
+                const videoContainer = document.getElementById('video-container');
+                if(videoContainer) videoContainer.innerHTML = '';
+            }
+        }
+
+    </script>
+</body>
+</html>
